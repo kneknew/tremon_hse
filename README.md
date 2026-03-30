@@ -1,17 +1,17 @@
 # TREMON - HSE - Industrial Safety Management Dashboard
 
 ## 📖 Project Overview
-**TREMON - HSE** is a modern, minimalist Internal Dashboard built for factory safety management. Designed with a "Database-First" approach, it digitizes the tracking of chemical documents (MSDS/CSDS), automated expiry alerts, and safety markers (fire extinguishers, emergency exits) across multiple workshops.
+**TREMON - HSE** is a modern, minimalist Internal Dashboard built for factory safety management. Designed with a "Database-First" approach, it digitizes the tracking of chemical documents (MSDS/CSDS), automated expiry alerts, and safety markers (fire extinguishers, emergency exits, electrical cabinets) across multiple workshops.
 
 ## ✨ Key Features
-*   **Chemical & Document Management**: Tracks global `cas_number`, auto-calculates `msds_expiry` (+3 years from the published date), and manages `hazard_logo` GHS pictograms using array data types.
-*   **Direct Cloud Storage**: Directly uploads and serves PDF documents via Supabase Storage (`chemical-docs` bucket).
-*   **Interactive SVG Map & Clustering**: Visualizes safety markers and chemical locations using specific `x` and `y` coordinates. Automatically clusters multiple chemicals at the same location into a "Folder" icon.
+*   **Chemical & Document Management**: Tracks global `cas_number`, auto-calculates `msds_expiry` (+3 years from the `published_date`), and manages `hazard_logo` GHS pictograms using array data types to allow dynamic UI selections.
+*   **Direct Cloud Storage**: Directly uploads and serves PDF documents via Supabase Storage (`chemical-docs` bucket) secured by custom Policies.
+*   **Interactive SVG Map & Clustering**: Visualizes safety markers and chemical locations using specific `x` and `y` coordinates. Automatically clusters multiple chemicals at the same location into a "Folder" icon for a clean UI.
 *   **Role-Based Access Control (RBAC)**: Secure access using Supabase Auth. Only Admin users can upload files or modify chemical and safety data.
 
 ## 🛠 Tech Stack
-*   **Frontend**: React JS, Vite, Tailwind CSS, Lucide React.
-*   **Backend**: Python, FastAPI, Uvicorn.
+*   **Frontend**: React JS, Vite, Tailwind CSS, Lucide React (Component-Based Architecture).
+*   **Backend**: Python, FastAPI, Uvicorn (Procedural API Endpoints).
 *   **Database & Storage**: Supabase (PostgreSQL), Supabase Auth, Supabase Storage.
 *   **Deployment**: GitHub, Render.com.
 
@@ -20,53 +20,77 @@
 ## 📐 System Architecture Diagrams
 
 ### 1. System Architecture Diagram
-This diagram illustrates the 3-Tier Architecture of the application.
+This diagram illustrates the 5-Phase Architecture from Local Development to Cloud Deployment, featuring color-coded zones for clarity.
+
+
 
 ```mermaid
-graph TD
-    subgraph "Phase 1: Local Development Environment (Neovim / Terminal)"
-        subgraph "Phase 4: Frontend Development (Node.js / Vite)"
-            UI[React JS UI - Port 5173]
-            Style[Tailwind CSS + Lucide React]
-            Map[SVG Workshop Map]
-            UI --> Style
-            UI --> Map
-        end
+flowchart LR
+    %% Color definitions for specific areas
+    classDef phase1 fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef frontend fill:#e0e7ff,stroke:#6366f1,stroke-width:2px,color:#312e81;
+    classDef backend fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d;
+    classDef cloud fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f;
+    classDef deploy fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d;
 
-        subgraph "Phase 3: Backend Development (Python venv)"
-            API[FastAPI Server - Port 8000]
-            Auth_Middleware[Auth & Permissions]
-            API --- Auth_Middleware
-        end
+    %% Phase 1: Local Environment
+    subgraph P1 ["🛠️ Phase 1: Local Workspace"]
+        Dev((Neovim<br/>Terminal)):::phase1
     end
 
-    subgraph "Phase 2: Cloud Database & Storage (Supabase)"
-        DB[(PostgreSQL Database)]
-        Storage[Bucket: chemical-docs]
-        SupabaseAuth[Supabase Auth]
-    end
-    
-    subgraph "Phase 5: Cloud Deployment"
-        Render[Render.com PaaS Hosting]
-        GitHub[GitHub Repository]
+    %% Phase 3 & 4: Application Core
+    subgraph App ["💻 Phases 3 & 4: Application Core"]
+        UI["Frontend (React)<br/>Port: 5173"]:::frontend
+        API["Backend (FastAPI)<br/>Port: 8000"]:::backend
+        
+        UI <-->|HTTP API Calls| API
     end
 
-    %% Development Flow
-    UI -.->|Push Source Code| GitHub
-    API -.->|Push Source Code| GitHub
-    GitHub -.->|Auto Deploy| Render
+    %% Phase 2: Cloud Database & Storage
+    subgraph P2 ["☁️ Phase 2: Supabase"]
+        Auth["Supabase Auth"]:::cloud
+        DB[("PostgreSQL DB")]:::cloud
+        Storage["Storage<br/>(chemical-docs)"]:::cloud
+    end
 
-    %% Communication Flow
-    UI <-->|HTTP/JSON API Calls| API
+    %% Phase 5: Cloud Deployment
+    subgraph P5 ["🚀 Phase 5: Cloud Deployment"]
+        Git["GitHub"]:::deploy
+        Render["Render.com"]:::deploy
+        
+        Git -.->|Auto Deploy| Render
+    end
+
+    %% Workflow connections
+    Dev --->|Write Code| UI
+    Dev --->|Write Code| API
+
+    %% Data connections
+    UI <-->|Verify JWT Token| Auth
     API <-->|Read/Write Data| DB
-    API -->|Upload PDF files| Storage
-    UI <-->|JWT Token Auth| SupabaseAuth
+    API --->|Upload PDF files| Storage
+
+    %% Deployment connections
+    UI & API ===>|Push Source Code| Git
 ```
 
+
 ### 2. Entity-Relationship Diagram (ERD)
-The core database schema featuring strict `NOT NULL` constraints, isolated `x` and `y` coordinates, and automated timestamps.
+The core database schema featuring strict `NOT NULL` constraints, separated `x` and `y` coordinates, dynamic arrays, and automated timestamps via Postgres Triggers.
+
 
 ```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': { 
+    'primaryColor': '#ffffff', 
+    'primaryBorderColor': '#cbd5e1', 
+    'primaryTextColor': '#1e293b', 
+    'lineColor': '#475569', 
+    'attributeBackgroundColorOdd': '#f8fafc', 
+    'attributeBackgroundColorEven': '#ffffff'
+  }
+}}%%
 erDiagram
     workshops ||--o{ chemicals : "contains"
     workshops ||--o{ safety_markers : "contains"
@@ -75,14 +99,14 @@ erDiagram
     workshops {
         uuid id PK
         text name "NOT NULL, UNIQUE"
-        timestamptz created_at
+        timestamptz created_at "DEFAULT now()"
     }
 
     profiles {
         uuid id PK "FK to auth.users"
         text full_name "NOT NULL"
         text role "NOT NULL, DEFAULT 'viewer'"
-        timestamptz created_at
+        timestamptz created_at "DEFAULT now()"
     }
 
     chemicals {
@@ -96,10 +120,10 @@ erDiagram
         text_array hazard_logo "NOT NULL, DEFAULT '{}'"
         date published_date "NOT NULL"
         date newest_published_date "NOT NULL"
-        date msds_expiry "GENERATED ALWAYS (+3 years)"
+        date msds_expiry "GENERATED ALWAYS"
         float8 x "NOT NULL"
         float8 y "NOT NULL"
-        timestamptz created_at "NOT NULL"
+        timestamptz created_at "DEFAULT now()"
         timestamptz updated_at "Trigger Auto Update"
     }
 
@@ -113,87 +137,131 @@ erDiagram
         text schedule "NOT NULL"
         float8 x "NOT NULL"
         float8 y "NOT NULL"
-        timestamptz created_at "NOT NULL"
+        timestamptz created_at "DEFAULT now()"
     }
 ```
+
 
 ### 3. Data Flow Diagram (Upload Flow)
 The sequence of adding a new chemical, parsing the `hazard_logo` array, uploading PDFs to the `chemical-docs` bucket, and inserting data.
 
+
+
 ```mermaid
 sequenceDiagram
-    participant Admin as Admin User (React UI)
-    participant API as FastAPI Backend
-    participant Storage as Supabase Storage (chemical-docs)
-    participant DB as Supabase DB (chemicals)
+    autonumber
+    
+    %% Using rgba() for transparent backgrounds to support Light/Dark mode readability
+    box rgba(99, 102, 241, 0.15) "Phase 4: Frontend"
+        participant Admin as Admin (React UI)
+    end
+    
+    box rgba(34, 197, 94, 0.15) "Phase 3: Backend"
+        participant API as FastAPI Server
+    end
+    
+    box rgba(245, 158, 11, 0.15) "Phase 2: Supabase Cloud"
+        participant Storage as Storage (chemical-docs)
+        participant DB as Database (chemicals)
+    end
 
-    Admin->>API: 1. POST Form Data + 2 PDF Files
+    Admin->>API: POST Form Data + 2 PDF Files
     activate API
     
-    API->>API: 2. Parse JSON Data (hazard_logo)
+    API->>API: Parse JSON Data (hazard_logo)
     
-    API->>Storage: 3. Upload msds_file.pdf to /msds
+    API->>Storage: Upload msds_file.pdf to /msds
     Storage-->>API: Return Success (msds_path)
     
-    API->>Storage: 4. Upload csds_file.pdf to /csds
+    API->>Storage: Upload csds_file.pdf to /csds
     Storage-->>API: Return Success (csds_path)
     
-    API->>DB: 5. INSERT chemical data + msds_path + csds_path
+    API->>DB: INSERT chemical data + msds_path + csds_path
     DB-->>API: Return new row data
     
-    API-->>Admin: 6. Response JSON "Chemical added successfully!"
+    API-->>Admin: Response JSON "Chemical added successfully!"
     deactivate API
 ```
 
+
+
 ### 4. Authentication Flow
-The security mechanism using Supabase Auth JWT Tokens to protect the API endpoints.
+The security mechanism using Supabase Auth JWT Tokens to protect the API endpoints and Storage buckets.
+
+
 
 ```mermaid
 sequenceDiagram
-    participant User as Admin/Viewer (React UI)
-    participant SupabaseAuth as Supabase Auth Service
-    participant API as FastAPI Backend
+    autonumber
+    
+    %% Using rgba() for transparent backgrounds
+    box rgba(99, 102, 241, 0.15) "Phase 4: Frontend"
+        participant User as Admin/Viewer (React UI)
+    end
+    
+    box rgba(245, 158, 11, 0.15) "Phase 2: Supabase Cloud"
+        participant SupabaseAuth as Supabase Auth
+    end
+    
+    box rgba(34, 197, 94, 0.15) "Phase 3: Backend"
+        participant API as FastAPI Server
+    end
 
-    User->>SupabaseAuth: 1. Input Email & Password (signInWithPassword)
+    User->>SupabaseAuth: Input Email & Password (signInWithPassword)
     activate SupabaseAuth
-    SupabaseAuth-->>User: 2. Return JWT Access Token + User Info
+    SupabaseAuth-->>User: Return JWT Access Token + User Info
     deactivate SupabaseAuth
 
-    User->>API: 3. Call API (e.g., /add-chemical) + Header: Bearer <JWT Token>
+    User->>API: Call API (e.g., /add-chemical) + Header: Bearer <JWT Token>
     activate API
-    API->>SupabaseAuth: 4. Verify JWT Token validity
-    SupabaseAuth-->>API: 5. Token is Valid (Return User ID)
-    API-->>User: 6. Process request & Return Data
+    API->>SupabaseAuth: Verify JWT Token validity
+    SupabaseAuth-->>API: Token is Valid (Return User ID)
+    API-->>User: Process request & Return Data
     deactivate API
 ```
 
+
+
 ### 5. Frontend React Component Tree
-The Component-Based Architecture splitting the UI into manageable views.
+The ultra-compact Component-Based Architecture splitting the UI into manageable views corresponding to the codebase structure.
+
+
 
 ```mermaid
-graph TD
-    App[App Component<br/>Main Container & State Manager]
-    
-    %% UI Sub-components
-    Sidebar[Sidebar Component<br/>Navigation Menu]
-    Header[Header Component<br/>Top Bar & Notifications]
-    
-    %% Page Views
-    DashboardView[Dashboard View<br/>Overview & Alerts]
-    WorkshopView[Workshop View<br/>Interactive SVG Map]
-    ChemicalsView[Chemicals View<br/>Data Table & Print]
-    AuditView[Audit View<br/>Checklists]
-    PlansView[Plans View<br/>Schedules]
+flowchart LR
+    %% 4. Main Container
+    subgraph Container ["4. MAIN APP CONTAINER"]
+        App((App))
+    end
 
-    %% Connections
-    App --> Sidebar
-    App --> Header
-    App --> DashboardView
-    App --> WorkshopView
-    App --> ChemicalsView
-    App --> AuditView
-    App --> PlansView
+    %% 2. UI Components
+    subgraph UI ["2. UI SUB-COMPONENTS"]
+        App --> Sidebar
+        App --> Header
+    end
+
+    %% 3. Page Views
+    subgraph Views ["3. PAGE VIEWS"]
+        App --> DashboardView
+        App --> WorkshopView
+        App --> ChemicalsView
+        App --> AuditView["Audit (Placeholder)"]
+        App --> PlansView["Plans (Placeholder)"]
+    end
+
+    %% 1. Data Constants
+    subgraph Data ["1. DATA CONSTANTS"]
+        Mock[(MOCK_DATA)] -.-> WorkshopView
+        Mock -.-> ChemicalsView
+        Mock -.-> DashboardView
+    end
+
+    %% Styling to make it compact
+    classDef default fill:#fff,stroke:#cbd5e1,stroke-width:1px,color:#0f172a;
+    classDef container fill:#e0e7ff,stroke:#4f46e5,stroke-width:2px;
+    class App container;
 ```
 
----
 
+
+---

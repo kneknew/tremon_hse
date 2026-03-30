@@ -24,18 +24,20 @@ This diagram illustrates the 3-Tier Architecture of the application.
 
 ```mermaid
 graph TD
-    subgraph "Phase 4: Frontend (Local / Render.com)"
-        UI[React JS UI]
-        Style[Tailwind CSS + Lucide React]
-        Map[SVG Workshop Map]
-        UI --> Style
-        UI --> Map
-    end
+    subgraph "Phase 1: Local Development Environment (Neovim / Terminal)"
+        subgraph "Phase 4: Frontend Development (Node.js / Vite)"
+            UI[React JS UI - Port 5173]
+            Style[Tailwind CSS + Lucide React]
+            Map[SVG Workshop Map]
+            UI --> Style
+            UI --> Map
+        end
 
-    subgraph "Phase 3: Backend (Python FastAPI)"
-        API[FastAPI Server]
-        Auth_Middleware[Auth & Permissions]
-        API --- Auth_Middleware
+        subgraph "Phase 3: Backend Development (Python venv)"
+            API[FastAPI Server - Port 8000]
+            Auth_Middleware[Auth & Permissions]
+            API --- Auth_Middleware
+        end
     end
 
     subgraph "Phase 2: Cloud Database & Storage (Supabase)"
@@ -43,6 +45,16 @@ graph TD
         Storage[Bucket: chemical-docs]
         SupabaseAuth[Supabase Auth]
     end
+    
+    subgraph "Phase 5: Cloud Deployment"
+        Render[Render.com PaaS Hosting]
+        GitHub[GitHub Repository]
+    end
+
+    %% Development Flow
+    UI -.->|Push Source Code| GitHub
+    API -.->|Push Source Code| GitHub
+    GitHub -.->|Auto Deploy| Render
 
     %% Communication Flow
     UI <-->|HTTP/JSON API Calls| API

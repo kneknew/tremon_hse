@@ -185,21 +185,3 @@ graph TD
 
 ---
 
-## 🚀 Local Development Setup
-
-### 1. Backend (Python/FastAPI)
-```bash
-cd backend
-python -m venv venv
-# Windows: .\venv\Scripts\activate
-# Linux/Mac: source venv/bin/activate
-pip install fastapi uvicorn supabase python-dotenv python-multipart
-uvicorn main:app --reload
-```
-
-### 2. Frontend (React/Vite)
-```bash
-cd frontend
-npm install
-npm run dev
-```

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware # THÊM DÒNG NÀY VÀO ĐÂY
 from typing import Optional
 import os
 import json
@@ -11,6 +12,17 @@ load_dotenv()
 
 # Set the correct project title
 app = FastAPI(title="TREMON - HSE API")
+app.add_middleware(
+    CORSMiddleware,
+    # Điền chính xác đường dẫn Frontend (cổng 5173) của bạn vào đây:
+    allow_origins=[
+        "http://localhost:5173",
+        "https://musical-memory-94xwjp76j573xq4g-5173.app.github.dev" 
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize Supabase Client
 url = os.getenv("SUPABASE_URL")

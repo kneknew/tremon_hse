@@ -27,27 +27,25 @@ This diagram illustrates the 5-Phase Architecture from Local Development to Clou
 ```mermaid
 flowchart LR
     %% Color definitions for specific areas
-    classDef phase1 fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,stroke-dasharray: 5 5;
     classDef frontend fill:#e0e7ff,stroke:#6366f1,stroke-width:2px,color:#312e81;
     classDef backend fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d;
     classDef cloud fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f;
     classDef deploy fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d;
+    classDef phase1 fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,stroke-dasharray: 5 5;
 
-    %% Phase 1: Local Environment
-    subgraph P1 ["🛠️ Phase 1: Local Workspace"]
-        Dev((Neovim<br/>Terminal)):::phase1
-    end
-
-    %% Phase 3 & 4: Application Core
-    subgraph App ["💻 Phases 3 & 4: Application Core"]
-        UI["Frontend (React)<br/>Port: 5173"]:::frontend
-        API["Backend (FastAPI)<br/>Port: 8000"]:::backend
+    %% Phase 1 wrapping Phase 3 and 4
+    subgraph LocalEnv ["💻 Phase 1: Local Environment Setup"]
+        direction TB
+        
+        UI["Phase 4: Frontend (React)<br/>"]:::frontend
+        API["Phase 3: Backend (FastAPI)<br/>"]:::backend
         
         UI <-->|HTTP API Calls| API
     end
 
     %% Phase 2: Cloud Database & Storage
-    subgraph P2 ["☁️ Phase 2: Supabase"]
+    subgraph P2 ["☁️ Phase 2: Supabase Cloud"]
+        direction TB
         Auth["Supabase Auth"]:::cloud
         DB[("PostgreSQL DB")]:::cloud
         Storage["Storage<br/>(chemical-docs)"]:::cloud
@@ -55,15 +53,12 @@ flowchart LR
 
     %% Phase 5: Cloud Deployment
     subgraph P5 ["🚀 Phase 5: Cloud Deployment"]
+        direction TB
         Git["GitHub"]:::deploy
         Render["Render.com"]:::deploy
         
         Git -.->|Auto Deploy| Render
     end
-
-    %% Workflow connections
-    Dev --->|Write Code| UI
-    Dev --->|Write Code| API
 
     %% Data connections
     UI <-->|Verify JWT Token| Auth
@@ -71,7 +66,7 @@ flowchart LR
     API --->|Upload PDF files| Storage
 
     %% Deployment connections
-    UI & API ===>|Push Source Code| Git
+    LocalEnv ===>|Push Source Code| Git
 ```
 
 

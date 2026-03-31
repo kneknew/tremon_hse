@@ -26,47 +26,60 @@ This diagram illustrates the 5-Phase Architecture from Local Development to Clou
 
 ```mermaid
 flowchart LR
-    %% Color definitions for specific areas
-    classDef frontend fill:#e0e7ff,stroke:#6366f1,stroke-width:2px,color:#312e81;
-    classDef backend fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d;
-    classDef cloud fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f;
-    classDef deploy fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d;
-    classDef phase1 fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,stroke-dasharray: 5 5;
+    %% Modern Color Palette
+    classDef dev fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#0f172a,stroke-dasharray: 5 5;
+    classDef front fill:#e0e7ff,stroke:#4f46e5,stroke-width:2px,color:#1e293b;
+    classDef back fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#1e293b;
+    classDef cloud fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#1e293b;
+    classDef deploy fill:#fee2e2,stroke:#e11d48,stroke-width:2px,color:#4c0519;
 
-    %% Phase 1 wrapping Phase 3 and 4
-    subgraph LocalEnv ["💻 Phase 1: Local Environment Setup"]
+    %% 1. Workspace
+    subgraph Tier1 ["Phase 1. Workspace (Windows)"]
         direction TB
-        
-        UI["Phase 4: Frontend (React)<br/>"]:::frontend
-        API["Phase 3: Backend (FastAPI)<br/>"]:::backend
-        
-        UI <-->|HTTP API Calls| API
+        Editor((Code Environment)):::dev
     end
 
-    %% Phase 2: Cloud Database & Storage
-    subgraph P2 ["☁️ Phase 2: Supabase Cloud"]
+    %% Phase 2. Application Tier
+    subgraph Tier2 ["Phase 2. Application Tier"]
         direction TB
-        Auth["Supabase Auth"]:::cloud
-        DB[("PostgreSQL DB")]:::cloud
-        Storage["Storage<br/>(chemical-docs)"]:::cloud
+        React["Frontend (React / Vite)<br/>Port: 5173"]:::front
+        FastAPI["Backend (Python FastAPI)<br/>Port: 8000"]:::back
     end
 
-    %% Phase 5: Cloud Deployment
-    subgraph P5 ["🚀 Phase 5: Cloud Deployment"]
+    %% Phase 3. Cloud Data Tier
+    subgraph Tier3 ["Phase 3. Cloud Data Tier (Supabase)"]
         direction TB
-        Git["GitHub"]:::deploy
-        Render["Render.com"]:::deploy
-        
-        Git -.->|Auto Deploy| Render
+        Auth["Auth Service<br/>(JWT & RLS)"]:::cloud
+        DB[("PostgreSQL<br/>(4 Core Tables)")]:::cloud
+        Storage["Storage Bucket<br/>(chemical-docs)"]:::cloud
     end
 
-    %% Data connections
-    UI <-->|Verify JWT Token| Auth
-    API <-->|Read/Write Data| DB
-    API --->|Upload PDF files| Storage
+    %% Phase 4. Production Tier
+    subgraph Tier4 ["Phase 4. Production Tier"]
+        direction TB
+        GitHub["GitHub Repository"]:::deploy
+        Render["Render.com PaaS"]:::deploy
+    end
 
-    %% Deployment connections
-    LocalEnv ===>|Push Source Code| Git
+    %% --- Connections ---
+    
+    %% Development actions
+    Editor -.->|Code & Command| React
+    Editor -.->|Code & Command| FastAPI
+
+    %% Frontend to Backend
+    React <===>|HTTP/JSON API Calls & Form Data| FastAPI
+
+    %% Client directly to Auth
+    React <===>|Verify Credentials| Auth
+
+    %% Backend to Cloud Data
+    FastAPI ===>|Query & Execute| DB
+    FastAPI ===>|Upload PDF files| Storage
+
+    %% Deployment flow
+    React & FastAPI -.->|Push Source Code| GitHub
+    GitHub ===>|Auto Deploy| Render
 ```
 
 

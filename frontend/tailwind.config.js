@@ -6,13 +6,16 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'], 
+      },
       colors: {
         'factory-bg': '#fcfcfd',
         'factory-indigo': '#4f46e5',
       },
       borderRadius: {
         'super': '2.5rem',
-      }
+      },
     },
   },
   plugins: [],

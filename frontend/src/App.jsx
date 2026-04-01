@@ -77,9 +77,9 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
     { id: 'flammable', label: 'Dễ cháy' },
     { id: 'toxic', label: 'Độc hại' },
     { id: 'corrosive', label: 'Ăn mòn' },
-    { id: 'explosive', label: 'Nổ' },
-    { id: 'oxidizing', label: 'Oxy hóa' },
-    { id: 'health_hazard', label: 'Nguy hại sức khỏe' }
+    { id: 'health_hazard', label: 'Nguy hại' },
+    { id: 'harmful', label: 'Kích ứng' },
+    { id: 'environmental_hazard', label: 'Nguy hại môi trường' }
   ];
 
   if (!isOpen) return null;

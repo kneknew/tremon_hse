@@ -22,17 +22,25 @@ const WORKSHOP_DATA = {
 };
 
 // =============================================================================
-// 2. MODAL THÊM HÓA CHẤT
+// 2. MODAL THÊM HÓA CHẤT (Đã loại bỏ hoàn toàn X, Y)
 // =============================================================================
 const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [msdsFile, setMsdsFile] = useState(null);
   const [csdsFile, setCsdsFile] = useState(null);
   
+  const AVAILABLE_WORKSHOPS = [
+    { id: 'e4843734-f2bb-4295-a849-a64bc8b6c2da', name: 'Xưởng Cũ', locations: ['Khu vực Máy tiện', 'Kho vật tư', 'Đóng gói'] },
+    { id: 'uuid-xuong-moi', name: 'Xưởng Mới', locations: ['Hấp', 'In', 'Vẽ', 'Bơm'] },
+    { id: 'uuid-xuong-ruot', name: 'Xưởng Ruột', locations: ['Lõi điều hành', 'Trạm cấp phôi', 'Trạm ra hàng'] }
+  ];
+
+  // ĐÃ SỬA: Xóa x, y khỏi state khởi tạo
   const [formData, setFormData] = useState({
     name: '', other_name: '', cas_number: '',
-    workshop_id: 'e4843734-f2bb-4295-a849-a64bc8b6c2da', 
-    published_date: '', newest_published_date: '', x: '', y: '', hazard_logo: []
+    workshop_id: AVAILABLE_WORKSHOPS.id, 
+    location_name: AVAILABLE_WORKSHOPS.locations, 
+    published_date: '', newest_published_date: '', hazard_logo: []
   });
 
   const GHS_LOGOS = [
@@ -43,6 +51,16 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
   ];
 
   if (!isOpen) return null;
+
+  const handleWorkshopChange = (e) => {
+    const selectedWsId = e.target.value;
+    const selectedWs = AVAILABLE_WORKSHOPS.find(ws => ws.id === selectedWsId);
+    setFormData(prev => ({
+      ...prev,
+      workshop_id: selectedWsId,
+      location_name: selectedWs ? selectedWs.locations : 'N/A' 
+    }));
+  };
 
   const handleCheckboxChange = (logoId) => {
     setFormData(prev => ({
@@ -61,22 +79,24 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
       submitData.append('name', formData.name);
       submitData.append('cas_number', formData.cas_number);
       submitData.append('workshop_id', formData.workshop_id);
+      submitData.append('location_name', formData.location_name); 
       submitData.append('published_date', formData.published_date);
       submitData.append('newest_published_date', formData.newest_published_date);
-      submitData.append('x', parseFloat(formData.x) || 0);
-      submitData.append('y', parseFloat(formData.y) || 0);
+      
       if (formData.other_name) submitData.append('other_name', formData.other_name);
       submitData.append('hazard_logo_json', JSON.stringify(formData.hazard_logo));
       submitData.append('msds_file', msdsFile);
       submitData.append('csds_file', csdsFile);
 
-      await axios.post('https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/add-chemical', submitData);
+      await axios.post('http://127.0.0.1:8000/add-chemical', submitData);
       alert("Thêm hóa chất thành công!");
       onSuccess(); onClose();   
     } catch (error) {
       alert("Lỗi máy chủ!");
     } finally { setIsSubmitting(false); }
   };
+
+  const currentWorkshop = AVAILABLE_WORKSHOPS.find(ws => ws.id === formData.workshop_id);
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -92,44 +112,58 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
 
         <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
           <form id="add-chemical-form" onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên hóa chất *</label>
-                  <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Số CAS *</label>
-                  <input required type="text" value={formData.cas_number} onChange={e => setFormData({...formData, cas_number: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" />
-                </div>
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tọa độ X</label>
-                    <input required type="number" step="0.1" value={formData.x} onChange={e => setFormData({...formData, x: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tọa độ Y</label>
-                    <input required type="number" step="0.1" value={formData.y} onChange={e => setFormData({...formData, y: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" />
-                  </div>
-                </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên hóa chất *</label>
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" />
               </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ngày in bản đang treo *</label>
-                  <input required type="date" value={formData.published_date} onChange={e => setFormData({...formData, published_date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ngày in bản mới nhất *</label>
-                  <input required type="date" value={formData.newest_published_date} onChange={e => setFormData({...formData, newest_published_date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" />
-                </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên gọi khác</label>
+                <input type="text" placeholder="Không bắt buộc" value={formData.other_name} onChange={e => setFormData({...formData, other_name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Số CAS *</label>
+                <input required type="text" value={formData.cas_number} onChange={e => setFormData({...formData, cas_number: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" />
+              </div>
+            </div>
+
+            {/* ĐÃ SỬA: Đổi grid từ 4 cột thành 2 cột, xóa hoàn toàn X và Y */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-50">
+              <div>
+                <label className="block text-[11px] font-bold text-indigo-700 uppercase mb-1">Chọn Xưởng *</label>
+                <select required value={formData.workshop_id} onChange={handleWorkshopChange} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2.5 text-sm font-bold text-indigo-900 outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
+                  {AVAILABLE_WORKSHOPS.map(ws => (
+                    <option key={ws.id} value={ws.id}>{ws.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-indigo-700 uppercase mb-1">Phân khu *</label>
+                <select required value={formData.location_name} onChange={e => setFormData({...formData, location_name: e.target.value})} className="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2.5 text-sm font-bold text-indigo-900 outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
+                  {currentWorkshop?.locations.map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ngày in bản đang treo *</label>
+                <input required type="date" value={formData.published_date} onChange={e => setFormData({...formData, published_date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ngày in bản mới nhất *</label>
+                <input required type="date" value={formData.newest_published_date} onChange={e => setFormData({...formData, newest_published_date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Logo Cảnh báo GHS</label>
+              <label className="block text-[11px] font-bold text-slate-500 uppercase mb-2">Tick chọn Logo Cảnh báo GHS *</label>
               <div className="flex flex-wrap gap-2">
                 {GHS_LOGOS.map(logo => (
-                  <label key={logo.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer border text-xs font-bold transition-colors ${formData.hazard_logo.includes(logo.id) ? 'bg-red-50 border-red-200 text-red-600' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
+                  <label key={logo.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer border text-xs font-bold transition-colors ${formData.hazard_logo.includes(logo.id) ? 'bg-red-50 border-red-200 text-red-600 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
                     <input type="checkbox" className="hidden" checked={formData.hazard_logo.includes(logo.id)} onChange={() => handleCheckboxChange(logo.id)} />
                     {logo.label}
                   </label>
@@ -138,23 +172,23 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50">
+              <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50 transition-colors">
                 <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setMsdsFile(e.target.files)}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                <Upload size={18} className="mx-auto text-slate-400 mb-1" />
-                <p className="text-[11px] font-bold text-slate-600 truncate">{msdsFile ? msdsFile.name : "Upload MSDS (PDF)"}</p>
+                <Upload size={18} className={`mx-auto mb-1 ${msdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
+                <p className={`text-[11px] font-bold truncate ${msdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>{msdsFile ? msdsFile.name : "Tải lên MSDS (PDF)"}</p>
               </div>
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50">
+              <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50 transition-colors">
                 <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setCsdsFile(e.target.files)}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                <Upload size={18} className="mx-auto text-slate-400 mb-1" />
-                <p className="text-[11px] font-bold text-slate-600 truncate">{csdsFile ? csdsFile.name : "Upload CSDS (PDF)"}</p>
+                <Upload size={18} className={`mx-auto mb-1 ${csdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
+                <p className={`text-[11px] font-bold truncate ${csdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>{csdsFile ? csdsFile.name : "Tải lên CSDS (PDF)"}</p>
               </div>
             </div>
           </form>
         </div>
 
         <div className="p-5 border-t border-slate-100 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="px-5 py-2 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100">HỦY</button>
-          <button form="add-chemical-form" type="submit" disabled={isSubmitting} className="px-6 py-2 rounded-xl font-bold text-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 shadow-md">
+          <button type="button" onClick={onClose} className="px-5 py-2 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 transition-colors">HỦY</button>
+          <button form="add-chemical-form" type="submit" disabled={isSubmitting} className="px-6 py-2 rounded-xl font-bold text-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 shadow-md transition-colors">
             {isSubmitting ? 'ĐANG LƯU...' : 'LƯU HÓA CHẤT'}
           </button>
         </div>
@@ -282,7 +316,6 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick }) => (
               <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Tên hóa chất</th>
               <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Cảnh báo (GHS)</th>
               <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Vị trí</th>
-              {/* ĐÃ FIX: Gộp 2 cột Ngày treo và Hạn MSDS thành 1 cột duy nhất là "Date" */}
               <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Date</th>
               <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider text-center whitespace-nowrap">Thao tác</th>
             </tr>
@@ -330,24 +363,20 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick }) => (
                     </td>
 
                     <td className="px-4 py-3 whitespace-nowrap">
-  <div className="flex items-center">
-    <span className="px-2.5 py-1.5 bg-indigo-50/80 text-indigo-700 border border-indigo-100 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">
-      {/* Ghép Tên Xưởng và Tên Phân khu lại với nhau */}
-      {chem.workshops?.name || 'N/A'} - {chem.location_name}
-    </span>
-  </div>
-</td>
+                      <div className="flex items-center">
+                        <span className="px-2.5 py-1.5 bg-indigo-50/80 text-indigo-600 border border-indigo-100 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">
+                          {chem.workshops?.name || 'N/A'} - {chem.location_name || 'N/A'}
+                        </span>
+                      </div>
+                    </td>
 
-                    {/* ĐÃ FIX: Cột Date được gộp chung, thêm hiệu ứng Hover hiện Tooltip */}
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="relative group inline-flex items-center">
-                        {/* Thẻ hiển thị Trạng thái */}
                         <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-help transition-colors ${isExpired ? "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100" : "bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100"}`}>
                           {isExpired ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
                           {isExpired ? "Hết hạn" : "Còn hạn"}
                         </div>
 
-                        {/* Bảng Tooltip (Cửa sổ nhỏ hiện khi hover) */}
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-slate-900 text-white rounded-xl p-3 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                           <div className="flex flex-col gap-2 text-xs">
                             <div className="flex justify-between gap-6">
@@ -359,7 +388,6 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick }) => (
                               <span className={`font-bold ${isExpired ? 'text-red-400' : 'text-emerald-400'}`}>{chem.msds_expiry}</span>
                             </div>
                           </div>
-                          {/* Mũi tên tam giác chỉ xuống */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
                         </div>
                       </div>
@@ -399,7 +427,7 @@ const App = () => {
   const fetchChemicals = async () => { 
     setIsLoading(true); 
     try { 
-      const response = await axios.get('https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/chemicals'); 
+      const response = await axios.get('http://127.0.0.1:8000/chemicals'); 
       setRealChemicals(response.data.data || []); 
     } catch (error) { 
       console.error("Lỗi tải dữ liệu:", error); 

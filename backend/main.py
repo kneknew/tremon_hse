@@ -36,11 +36,13 @@ async def add_chemical(
     workshop_id: str = Form(...),
     published_date: str = Form(...),
     newest_published_date: str = Form(...),
-    x: float = Form(...),
-    y: float = Form(...),
-    # Receive JSON string for hazard logos (e.g., '["flammable", "toxic"]')
-    hazard_logo_json: Optional[str] = Form(None),
+    hazard_logo_json: str = Form(...),
     other_name: Optional[str] = Form(None),
+    
+    # ĐÃ FIX: Đổi từ Form(...) bắt buộc thành Form(None) cho phép rỗng
+    x: Optional[float] = Form(None), 
+    y: Optional[float] = Form(None), 
+    
     msds_file: UploadFile = File(...),
     csds_file: UploadFile = File(...)
 ):

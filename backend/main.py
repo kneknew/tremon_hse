@@ -95,16 +95,11 @@ async def add_chemical(
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/chemicals")
-async def get_all_chemicals():
-    try:
-        # Fetch all records from the 'chemicals' table
-        result = supabase.table("chemicals").select("*").execute()
-        
-        # Return the data to the frontend
-        return {"message": "Successfully fetched chemicals", "data": result.data}
-        
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+def get_all_chemicals():
+    # Cú pháp "*, workshops(name)" sẽ tự động nối bảng và lấy tên xưởng cho bạn
+    response = supabase.table("chemicals").select("*, workshops(name)").execute()
+    return {"status": "success", "data": response.data}
+
 
 if __name__ == "__main__":
     import uvicorn

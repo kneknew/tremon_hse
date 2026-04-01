@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   LayoutDashboard, ClipboardCheck, Bell, Factory, Calendar, 
-  AlertTriangle, Box, ShieldAlert, Flame, Search, Map as MapIcon, 
-  Navigation, Plus, Filter, MoreVertical, CheckCircle2, Clock, 
-  Settings, Printer, FileDown, X, Upload 
+  Box, ShieldAlert, Flame, Search, Map as MapIcon, 
+  Plus, Filter, Clock, Settings, Printer, FileDown, X, Upload,
+  AlertTriangle, CheckCircle2
 } from 'lucide-react';
 
-// =============================================================================
 // =============================================================================
 // 1. MOCK DATA
 // =============================================================================
@@ -216,7 +215,7 @@ const Sidebar = ({ activeTab, setActiveTab, isOpen, setIsOpen }) => {
 };
 
 const Header = ({ activeTab }) => (
-  <header className="h-16 bg-white/90 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0">
+  <header className="h-16 bg-white/90 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0 w-full">
     <div className="flex flex-col min-w-max whitespace-nowrap">
       <h1 className="text-lg font-black text-slate-900 capitalize tracking-tight">
         {activeTab === 'chemicals' ? 'Danh mục Hóa chất' : activeTab}
@@ -253,8 +252,9 @@ const Header = ({ activeTab }) => (
 // 4. DANH SÁCH HÓA CHẤT
 // =============================================================================
 const ChemicalsView = ({ chemicals, isLoading, onAddClick }) => (
-  <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-    <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm gap-4">
+  <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500 w-full">
+    
+    <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm gap-4 w-full">
       <div className="flex-shrink-0">
         <h2 className="text-lg font-black text-slate-900 whitespace-nowrap">Quản lý Kho Hóa chất</h2>
         <p className="text-slate-500 text-xs font-medium mt-1 whitespace-nowrap">Quản lý hồ sơ MSDS, CSDS và thông tin cảnh báo an toàn</p>
@@ -274,19 +274,20 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick }) => (
       </div>
     </div>
     
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden w-full">
       <div className="overflow-x-auto w-full custom-scrollbar">
         <table className="w-full text-left border-collapse min-w-max">
           <thead className="bg-slate-50/80 border-b border-slate-200">
             <tr>
               <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Tên hóa chất</th>
               <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Cảnh báo (GHS)</th>
-              <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Bản in đang treo</th>
-              <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Hạn MSDS (3 năm)</th>
+              <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Vị trí</th>
+              {/* ĐÃ FIX: Gộp 2 cột Ngày treo và Hạn MSDS thành 1 cột duy nhất là "Date" */}
+              <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider whitespace-nowrap">Date</th>
               <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-wider text-center whitespace-nowrap">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 w-full">
             {isLoading ? (
               <tr><td colSpan="5" className="p-8 text-center text-xs text-slate-500 font-bold">Đang tải dữ liệu từ kho...</td></tr>
             ) : chemicals.length === 0 ? (
@@ -294,8 +295,9 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick }) => (
             ) : (
               chemicals.map(chem => {
                 const isExpired = new Date(chem.msds_expiry) < new Date();
+                
                 return (
-                  <tr key={chem.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <tr key={chem.id} className="hover:bg-slate-50/50 transition-colors group/row">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -309,15 +311,15 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick }) => (
                     </td>
                     
                     <td className="px-4 py-3">
-                      <div className="flex flex-row items-center gap-1 flex-wrap w-15">
+                      <div className="flex flex-row items-center gap-2 flex-wrap w-24">
                         {Array.isArray(chem.hazard_logo) && chem.hazard_logo.length > 0 ? (
                           chem.hazard_logo.map((logo_id, idx) => (
                             <img 
                               key={idx} 
                               src={`/assets/logos/${logo_id}.png`} 
                               alt={logo_id} title={logo_id} 
-                              className="object-contain drop-shadow-sm" 
-                              style={{ width: '20px', height: '20px' }}
+                              className="object-contain drop-shadow-sm flex-shrink-0" 
+                              style={{ width: '40px', height: '40px' }}
                               onError={(e) => { e.target.style.display = 'none'; }} 
                             />
                           ))
@@ -327,21 +329,42 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick }) => (
                       </div>
                     </td>
 
-                    <td className="px-4 py-3 whitespace-nowrap" >
-                      <div className="flex items-center gap-1.5 text-slate-600">
-                        <Clock size={14} className="text-slate-400" />
-                        <span className="text-xs font-bold">{chem.published_date}</span>
-                      </div>
-                    </td>
-
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <div className={`flex items-center gap-1.5 ${isExpired ? "text-red-600" : "text-emerald-600"}`}>
-                        <ShieldAlert size={14} />
-                        <span className="text-xs font-black">{chem.msds_expiry}</span>
+  <div className="flex items-center">
+    <span className="px-2.5 py-1.5 bg-indigo-50/80 text-indigo-700 border border-indigo-100 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-sm">
+      {/* Ghép Tên Xưởng và Tên Phân khu lại với nhau */}
+      {chem.workshops?.name || 'N/A'} - {chem.location_name}
+    </span>
+  </div>
+</td>
+
+                    {/* ĐÃ FIX: Cột Date được gộp chung, thêm hiệu ứng Hover hiện Tooltip */}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="relative group inline-flex items-center">
+                        {/* Thẻ hiển thị Trạng thái */}
+                        <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-help transition-colors ${isExpired ? "bg-red-50 text-red-600 border border-red-100 hover:bg-red-100" : "bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100"}`}>
+                          {isExpired ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />}
+                          {isExpired ? "Hết hạn" : "Còn hạn"}
+                        </div>
+
+                        {/* Bảng Tooltip (Cửa sổ nhỏ hiện khi hover) */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-slate-900 text-white rounded-xl p-3 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                          <div className="flex flex-col gap-2 text-xs">
+                            <div className="flex justify-between gap-6">
+                              <span className="text-slate-400 font-medium">Bản in đang treo:</span>
+                              <span className="font-bold">{chem.published_date}</span>
+                            </div>
+                            <div className="flex justify-between gap-6">
+                              <span className="text-slate-400 font-medium">Hạn MSDS mới nhất:</span>
+                              <span className={`font-bold ${isExpired ? 'text-red-400' : 'text-emerald-400'}`}>{chem.msds_expiry}</span>
+                            </div>
+                          </div>
+                          {/* Mũi tên tam giác chỉ xuống */}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900"></div>
+                        </div>
                       </div>
                     </td>
 
-                    {/* ĐÃ FIX: Thêm cả IN MSDS và IN CSDS, xếp nằm ngang cạnh nhau */}
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
                         <button className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[10px] font-bold hover:bg-black transition-all shadow-sm whitespace-nowrap">
@@ -388,27 +411,22 @@ const App = () => {
   useEffect(() => { fetchChemicals(); }, []);
 
   return ( 
-    <div className="flex h-screen bg-[#f8fafc] text-slate-800 font-sans overflow-hidden"> 
+    <div className="flex h-screen bg-[#f8fafc] text-slate-800 font-sans overflow-hidden w-full"> 
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} /> 
       
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden"> 
+      <main className="flex-1 flex flex-col min-w-0 w-full overflow-hidden"> 
         <Header activeTab={activeTab} />
         
-        {/* 1. XÓA BỎ class p-10 hoặc p-12 (viền quá to), đổi thành p-4 hoặc p-2 cho mỏng lại */}
-        <div className="flex-1 overflow-y-auto p-4 scroll-smooth"> 
-          
-          {/* 2. XÓA BỎ class "max-w-7xl mx-auto" hoặc "max-w-[1500px] mx-auto", thay bằng "w-full" */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth w-full"> 
           <div className="w-full"> 
-            
             {activeTab === 'chemicals' ? (
               <ChemicalsView chemicals={realChemicals} isLoading={isLoading} onAddClick={() => setIsAddModalOpen(true)} />
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+              <div className="flex flex-col items-center justify-center h-64 text-slate-400 w-full">
                 <Factory size={48} className="mb-4 opacity-20" />
                 <h2 className="text-lg font-bold text-slate-500">Khu vực đang phát triển</h2>
               </div>
             )}
-            
           </div> 
         </div> 
       </main>

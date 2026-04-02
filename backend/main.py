@@ -38,9 +38,7 @@ async def add_chemical(
     newest_published_date: str = Form(...),
     hazard_logo_json: str = Form(...),
     other_name: Optional[str] = Form(None),
-    location_name: Optional[str] = Form(None),
-    
-    # ĐÃ FIX: Đổi từ Form(...) bắt buộc thành Form(None) cho phép rỗng
+    location_names_json: str = Form(...), 
     x: Optional[float] = Form(None), 
     y: Optional[float] = Form(None), 
     
@@ -85,7 +83,7 @@ async def add_chemical(
             "hazard_logo": hazard_logos,
             "published_date": published_date,
             "newest_published_date": newest_published_date,
-            "location_name": location_name,
+            "location_names": location_names,
             "x": x,
             "y": y
         }

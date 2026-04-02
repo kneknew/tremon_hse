@@ -37,11 +37,19 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
 
   // ĐÃ SỬA: Xóa x, y khỏi state khởi tạo
   const [formData, setFormData] = useState({
-    name: '', other_name: '', cas_number: '',
-    workshop_id: AVAILABLE_WORKSHOPS.id, 
-    location_name: AVAILABLE_WORKSHOPS.locations, 
+    name: '',
+    other_name: '',
+    cas_number: '',
+    workshop_id: AVAILABLE_WORKSHOPS[0].id, 
+    location_name: AVAILABLE_WORKSHOPS[0].locations[0], 
     published_date: '', newest_published_date: '', hazard_logo: []
   });
+  const handleFileChange = (e, setter) => {
+  const file = e.target.files[0]; // Lấy file đầu tiên trong danh sách
+  if (file) {
+    setter(file);
+  }
+};
 
   const GHS_LOGOS = [
     { id: 'flammable', label: 'Dễ cháy' }, { id: 'toxic', label: 'Độc hại' },
@@ -88,7 +96,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
       submitData.append('msds_file', msdsFile);
       submitData.append('csds_file', csdsFile);
 
-      await axios.post('http://127.0.0.1:8000/add-chemical', submitData);
+      await axios.post('https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/add-chemical', submitData);
       alert("Thêm hóa chất thành công!");
       onSuccess(); onClose();   
     } catch (error) {
@@ -172,17 +180,36 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50 transition-colors">
-                <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setMsdsFile(e.target.files)}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                <Upload size={18} className={`mx-auto mb-1 ${msdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
-                <p className={`text-[11px] font-bold truncate ${msdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>{msdsFile ? msdsFile.name : "Tải lên MSDS (PDF)"}</p>
-              </div>
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50 transition-colors">
-                <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setCsdsFile(e.target.files)}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                <Upload size={18} className={`mx-auto mb-1 ${csdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
-                <p className={`text-[11px] font-bold truncate ${csdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>{csdsFile ? csdsFile.name : "Tải lên CSDS (PDF)"}</p>
-              </div>
-            </div>
+  {/* MSDS Upload */}
+  <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50 transition-colors">
+    <input 
+      required 
+      type="file" 
+      accept=".pdf" 
+      onChange={(e) => handleFileChange(e, setMsdsFile)} // Sử dụng hàm handle mới
+      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+    />
+    <Upload size={18} className={`mx-auto mb-1 ${msdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
+    <p className={`text-[11px] font-bold truncate ${msdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>
+      {msdsFile ? msdsFile.name : "Tải lên MSDS (PDF)"}
+    </p>
+  </div>
+
+  {/* CSDS Upload */}
+  <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50 transition-colors">
+    <input 
+      required 
+      type="file" 
+      accept=".pdf" 
+      onChange={(e) => handleFileChange(e, setCsdsFile)} // Sử dụng hàm handle mới
+      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+    />
+    <Upload size={18} className={`mx-auto mb-1 ${csdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
+    <p className={`text-[11px] font-bold truncate ${csdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>
+      {csdsFile ? csdsFile.name : "Tải lên CSDS (PDF)"}
+    </p>
+  </div>
+</div>
           </form>
         </div>
 
@@ -427,7 +454,7 @@ const App = () => {
   const fetchChemicals = async () => { 
     setIsLoading(true); 
     try { 
-      const response = await axios.get('http://127.0.0.1:8000/chemicals'); 
+      const response = await axios.get('https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/chemicals'); 
       setRealChemicals(response.data.data || []); 
     } catch (error) { 
       console.error("Lỗi tải dữ liệu:", error); 

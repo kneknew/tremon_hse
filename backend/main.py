@@ -38,6 +38,7 @@ async def add_chemical(
     newest_published_date: str = Form(...),
     hazard_logo_json: str = Form(...),
     other_name: Optional[str] = Form(None),
+    location_name: Optional[str] = Form(None),
     
     # ĐÃ FIX: Đổi từ Form(...) bắt buộc thành Form(None) cho phép rỗng
     x: Optional[float] = Form(None), 
@@ -84,16 +85,15 @@ async def add_chemical(
             "hazard_logo": hazard_logos,
             "published_date": published_date,
             "newest_published_date": newest_published_date,
+            "location_name": location_name,
             "x": x,
             "y": y
         }
 
         result = supabase.table("chemicals").insert(data).execute()
-        
-        # English response message
         return {"message": "Chemical added successfully!", "data": result.data}
-
     except Exception as e:
+        print(f"Lỗi: {str(e)}") # Nên print ra để debug trong console terminal
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/chemicals")
@@ -102,6 +102,14 @@ def get_all_chemicals():
     response = supabase.table("chemicals").select("*, workshops(name)").execute()
     return {"status": "success", "data": response.data}
 
+@app.get("/workshops")
+def get_all_workshops():
+    try:
+        response = supabase.table("workshops").select("*").execute()
+        return {"status": "success", "data": response.data}
+    except Exception as e:
+        print(f"❌ LỖI LẤY XƯỞNG: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,0 +1,82 @@
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from typing import Optional
+import json
+import re
+import uuid
+
+# Import biến supabase từ file database.py
+from database import supabase
+
+router = APIRouter(
+    tags=["Chemicals"] # Giúp gom nhóm API trên tài liệu Swagger UI
+)
+
+@router.post("/add-chemical")
+async def add_chemical(
+    name: str = Form(...),
+    cas_number: str = Form(...),
+    workshop_id: str = Form(...),
+    published_date: str = Form(...),
+    newest_published_date: str = Form(...),
+    hazard_logo_json: str = Form(...),
+    location_names_json: str = Form(...), 
+    other_name: Optional[str] = Form(None),
+    x: Optional[float] = Form(None), 
+    y: Optional[float] = Form(None), 
+    msds_file: UploadFile = File(...),
+    csds_file: UploadFile = File(...)
+):
+    try:
+        unique_id = uuid.uuid4().hex[:8]
+        safe_msds_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', msds_file.filename)
+        safe_csds_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', csds_file.filename)
+
+        # 1. Parse JSON string to Python list
+        hazard_logos = json.loads(hazard_logo_json) if hazard_logo_json else []
+        # SỬA LỖI: Parse location_names_json thành mảng (dựa theo code gốc của bạn bị thiếu phần này)
+        location_names = json.loads(location_names_json) if location_names_json else []
+
+        # 2. Upload MSDS file
+        msds_content = await msds_file.read()
+        msds_path = f"msds/{unique_id}_{safe_msds_name}"
+        supabase.storage.from_("chemical-docs").upload(
+            msds_path, 
+            msds_content,
+            file_options={"upsert": "true", "content-type": "application/pdf"}
+        )
+        
+        # 3. Upload CSDS file
+        csds_content = await csds_file.read()
+        csds_path = f"csds/{unique_id}_{safe_csds_name}"
+        supabase.storage.from_("chemical-docs").upload(
+            csds_path, 
+            csds_content,
+            file_options={"upsert": "true", "content-type": "application/pdf"}
+        )
+
+        # 4. Save information to database
+        data = {
+            "workshop_id": workshop_id,
+            "name": name,
+            "other_name": other_name,
+            "cas_number": cas_number,
+            "msds_path": msds_path,
+            "csds_path": csds_path,
+            "hazard_logo": hazard_logos,
+            "published_date": published_date,
+            "newest_published_date": newest_published_date,
+            "location_name": location_names,
+            "x": x,
+            "y": y
+        }
+
+        result = supabase.table("chemicals").insert(data).execute()
+        return {"message": "Chemical added successfully!", "data": result.data}
+    except Exception as e:
+        print(f"Lỗi: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/chemicals")
+def get_all_chemicals():
+    response = supabase.table("chemicals").select("*, workshops(name)").execute()
+    return {"status": "success", "data": response.data}

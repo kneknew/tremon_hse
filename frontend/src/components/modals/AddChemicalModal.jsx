@@ -154,12 +154,12 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50">
-                <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setMsdsFile(e.target.files)}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setMsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 <Upload size={18} className={`mx-auto mb-1 ${msdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
                 <p className={`text-[11px] font-bold truncate ${msdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>{msdsFile ? msdsFile.name : "Tải lên MSDS"}</p>
               </div>
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50">
-                <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setCsdsFile(e.target.files)}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setCsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 <Upload size={18} className={`mx-auto mb-1 ${csdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
                 <p className={`text-[11px] font-bold truncate ${csdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>{csdsFile ? csdsFile.name : "Tải lên CSDS"}</p>
               </div>

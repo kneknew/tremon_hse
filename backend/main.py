@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import chemicals, workshops
+from routers import chemicals, workshops, plans
 
 app = FastAPI(title="TREMON - HSE API")
 
@@ -17,6 +17,7 @@ app.add_middleware(
 
 app.include_router(chemicals.router)
 app.include_router(workshops.router)
+app.include_router(plans.router)
 
 if __name__ == "__main__":
     import uvicorn

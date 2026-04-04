@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException
 
-# Import biến supabase từ file database.py
 from database import supabase
 
 router = APIRouter(

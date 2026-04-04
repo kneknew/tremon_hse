@@ -4,11 +4,10 @@ import json
 import re
 import uuid
 
-# Import biến supabase từ file database.py
 from database import supabase
 
 router = APIRouter(
-    tags=["Chemicals"] # Giúp gom nhóm API trên tài liệu Swagger UI
+    tags=["Chemicals"]
 )
 
 @router.post("/add-chemical")
@@ -31,12 +30,9 @@ async def add_chemical(
         safe_msds_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', msds_file.filename)
         safe_csds_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', csds_file.filename)
 
-        # 1. Parse JSON string to Python list
         hazard_logos = json.loads(hazard_logo_json) if hazard_logo_json else []
-        # SỬA LỖI: Parse location_names_json thành mảng (dựa theo code gốc của bạn bị thiếu phần này)
         location_names = json.loads(location_names_json) if location_names_json else []
 
-        # 2. Upload MSDS file
         msds_content = await msds_file.read()
         msds_path = f"msds/{unique_id}_{safe_msds_name}"
         supabase.storage.from_("chemical-docs").upload(
@@ -45,7 +41,6 @@ async def add_chemical(
             file_options={"upsert": "true", "content-type": "application/pdf"}
         )
         
-        # 3. Upload CSDS file
         csds_content = await csds_file.read()
         csds_path = f"csds/{unique_id}_{safe_csds_name}"
         supabase.storage.from_("chemical-docs").upload(
@@ -54,7 +49,6 @@ async def add_chemical(
             file_options={"upsert": "true", "content-type": "application/pdf"}
         )
 
-        # 4. Save information to database
         data = {
             "workshop_id": workshop_id,
             "name": name,

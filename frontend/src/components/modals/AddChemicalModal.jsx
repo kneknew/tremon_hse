@@ -31,7 +31,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
           const data = res.data.data || [];
           setWorkshops(data);
           if (data.length > 0) {
-            setFormData(prev => ({ ...prev, workshop_id: data.id, location_names: [] }));
+            setFormData(prev => ({ ...prev, workshop_id: data[0].id, location_names: [] }));
           }
         } catch (error) {
           console.error("Lỗi lấy danh sách xưởng:", error);
@@ -90,7 +90,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
       onSuccess(); 
       onClose();   
     } catch (error) {
-      alert("Lỗi máy chủ!");
+      alert("Server error!");
       console.error(error);
     } finally { setIsSubmitting(false); }
   };

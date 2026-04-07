@@ -26,19 +26,28 @@ const PlansView = () => {
   const days = [];
   for (let i = 0; i < startingDay; i++) days.push(null); // Ô trống đầu tháng
   for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i)); // Các ngày trong tháng
+  const [plans, setPlans] = useState([]);
+  
+  const fetchPlans = async () => {
+    try {
+      const res = await axios.get('https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/plans');
+      setPlans(res.data.data || []);
+    } catch (error) {
+      console.error("Lỗi tải lịch trình:", error);
+    }
+  };
 
-  const MOCK_PLANS = [
-    { id: 1, date: '2026-04-02', title: 'Kiểm tra bình bọt tuyết', type: 'Kiểm tra PCCC', time: '08:30', status: 'pending' },
-    { id: 2, date: '2026-04-02', title: 'Thay mới MSDS Xưởng Cũ', type: 'Cập nhật MSDS', time: '14:00', status: 'completed' },
-    { id: 3, date: '2026-04-05', title: 'Audit 5S Toàn xưởng', type: 'Đánh giá 5S', time: '09:00', status: 'pending' },
-  ];
+  // Tự động lấy dữ liệu khi vừa mở trang
+  useEffect(() => {
+    fetchPlans();
+  }, []);
 
   const formatDateString = (date) => {
     const d = new Date(date);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
   const selectedDateString = formatDateString(selectedDate);
-  const plansForSelectedDate = MOCK_PLANS.filter(p => p.date === selectedDateString);
+  const plansForSelectedDate = plans.filter(p => p.plan_date === selectedDateString);
 
   const handleDayClick = (date) => {
     setSelectedDate(date);

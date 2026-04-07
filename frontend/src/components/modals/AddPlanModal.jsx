@@ -9,10 +9,33 @@ const AddPlanModal = ({ isOpen, onClose, selectedDate }) => {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Đã thêm kế hoạch: ${formData.title}\nVào ngày: ${selectedDate.toLocaleDateString('vi-VN')}`);
-    onClose();
+    
+    // 1. Chuyển đổi ngày đang chọn thành chuẩn YYYY-MM-DD của Database
+    const d = new Date(selectedDate);
+    const formattedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    try {
+      // 2. Gửi dữ liệu lên API Backend
+      const res = await axios.post('https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/plans/add', {
+        title: formData.title,
+        plan_type: formData.type, // Chú ý: trong state của bạn đang tên là 'type'
+        plan_date: formattedDate,
+        plan_time: formData.time,
+        description: formData.description
+      });
+
+      if (res.data.status === 'success') {
+        onSuccess(); // Hàm này sẽ trigger việc lấy lại danh sách kế hoạch mới
+        onClose();   // Đóng Modal
+        // Reset form
+        setFormData({ title: '', type: 'Kiểm tra PCCC', time: '08:00', description: '' });
+      }
+    } catch (error) {
+      console.error("Lỗi thêm kế hoạch:", error);
+      alert("Không thể lưu kế hoạch. Vui lòng kiểm tra lại!");
+    }
   };
 
   return (

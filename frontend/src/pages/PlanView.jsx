@@ -94,7 +94,7 @@ const PlansView = () => {
               
               const isSelected = selectedDate && date.getTime() === selectedDate.getTime();
               const isToday = formatDateString(date) === formatDateString(new Date());
-              const hasPlans = MOCK_PLANS.some(p => p.date === formatDateString(date));
+              const hasPlans = plans.some(p => p.date === formatDateString(date));
 
               return (
                 <div 

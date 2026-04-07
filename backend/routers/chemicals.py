@@ -70,7 +70,79 @@ async def add_chemical(
         print(f"Lỗi: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @router.get("/chemicals")
 def get_all_chemicals():
     response = supabase.table("chemicals").select("*, workshops(name)").execute()
     return {"status": "success", "data": response.data}
+
+
+@router.put("/update-chemical/{chemical_id}")
+async def update_chemical(
+    chemical_id: str,
+    name: str = Form(...),
+    cas_number: str = Form(...),
+    workshop_id: str = Form(...),
+    published_date: str = Form(...),
+    newest_published_date: str = Form(...),
+    hazard_logo_json: str = Form(...),
+    location_names_json: str = Form(...), 
+    other_name: Optional[str] = Form(None),
+    x: Optional[float] = Form(None), 
+    y: Optional[float] = Form(None), 
+    msds_file: Optional[UploadFile] = File(None),  # Cố tình để None (không bắt buộc)
+    csds_file: Optional[UploadFile] = File(None)   # Cố tình để None (không bắt buộc)
+):
+    try:
+        hazard_logos = json.loads(hazard_logo_json) if hazard_logo_json else []
+        location_names = json.loads(location_names_json) if location_names_json else []
+
+        # Dữ liệu cơ bản cần update
+        data = {
+            "workshop_id": workshop_id,
+            "name": name,
+            "other_name": other_name,
+            "cas_number": cas_number,
+            "hazard_logo": hazard_logos,
+            "published_date": published_date,
+            "newest_published_date": newest_published_date,
+            "location_name": location_names,
+        }
+        
+        # Chỉ cập nhật tọa độ nếu trên Frontend có gửi lên
+        if x is not None: data["x"] = x
+        if y is not None: data["y"] = y
+
+        unique_id = uuid.uuid4().hex[:8]
+
+        # NẾU CÓ CHỌN FILE MSDS MỚI -> UPLOAD VÀ GHI ĐÈ ĐƯỜNG DẪN
+        if msds_file:
+            safe_msds_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', msds_file.filename)
+            msds_content = await msds_file.read()
+            msds_path = f"msds/{unique_id}_{safe_msds_name}"
+            supabase.storage.from_("chemical-docs").upload(
+                msds_path, 
+                msds_content,
+                file_options={"upsert": "true", "content-type": "application/pdf"}
+            )
+            data["msds_path"] = msds_path
+
+        # NẾU CÓ CHỌN FILE CSDS MỚI -> UPLOAD VÀ GHI ĐÈ ĐƯỜNG DẪN
+        if csds_file:
+            safe_csds_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', csds_file.filename)
+            csds_content = await csds_file.read()
+            csds_path = f"csds/{unique_id}_{safe_csds_name}"
+            supabase.storage.from_("chemical-docs").upload(
+                csds_path, 
+                csds_content,
+                file_options={"upsert": "true", "content-type": "application/pdf"}
+            )
+            data["csds_path"] = csds_path
+
+        # Thực hiện cập nhật vào Database
+        result = supabase.table("chemicals").update(data).eq("id", chemical_id).execute()
+        return {"message": "Chemical updated successfully!", "data": result.data}
+    
+    except Exception as e:
+        print(f"Lỗi: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))

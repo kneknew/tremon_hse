@@ -40,7 +40,7 @@ const WorkshopView = ({ activeWorkshop, setActiveWorkshop, chemicals }) => {
           ))}
           {Object.values(clusters).map((group, idx) => {
             // ĐÃ FIX: Destructuring an toàn từ phần tử đầu tiên trong mảng
-            const { x, y } = group; 
+            const { x, y } = group[0]; 
             const hasExpired = group.some(c => {
                if (!c.msds_expiry) return false;
                const diff = Math.ceil((new Date(c.msds_expiry) - new Date()) / (1000 * 60 * 60 * 24));

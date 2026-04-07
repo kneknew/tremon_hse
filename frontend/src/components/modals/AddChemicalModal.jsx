@@ -1,14 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, X, Upload } from 'lucide-react';
+import { Box, X, Upload, Edit2 } from 'lucide-react';
 
-const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
+// Bổ sung props `initialData`
+const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [msdsFile, setMsdsFile] = useState(null);
   const [csdsFile, setCsdsFile] = useState(null);
   const [workshops, setWorkshops] = useState([]);
   const [isLoadingWorkshops, setIsLoadingWorkshops] = useState(true);
+
+  // Biến kiểm tra xem đây là form Sửa hay Thêm mới
+  const isEditMode = !!initialData;
 
   const [formData, setFormData] = useState({
     name: '', other_name: '', cas_number: '', workshop_id: '', 
@@ -22,6 +25,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
     { id: 'environmental', label: 'Nguy hại MT' }
   ];
 
+  // Fetch danh sách xưởng
   useEffect(() => {
     if (isOpen) {
       const fetchWorkshops = async () => {
@@ -30,8 +34,10 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
           const res = await axios.get('https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/workshops');
           const data = res.data.data || [];
           setWorkshops(data);
-          if (data.length > 0) {
-            setFormData(prev => ({ ...prev, workshop_id: data[0].id, location_names: [] }));
+          
+          // NẾU THÊM MỚI: Chọn xưởng đầu tiên làm mặc định
+          if (!isEditMode && data.length > 0) {
+            setFormData(prev => ({ ...prev, workshop_id: data[0].id }));
           }
         } catch (error) {
           console.error("Lỗi lấy danh sách xưởng:", error);
@@ -41,7 +47,34 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
       };
       fetchWorkshops();
     }
-  }, [isOpen]);
+  }, [isOpen, isEditMode]);
+
+  // LOGIC ĐIỀN DỮ LIỆU CŨ VÀO FORM KHI BẤM "SỬA"
+  useEffect(() => {
+    if (isOpen && initialData) {
+      setFormData({
+        name: initialData.name || '',
+        other_name: initialData.other_name || '',
+        cas_number: initialData.cas_number || '',
+        workshop_id: initialData.workshop_id || '',
+        location_names: initialData.location_name || [], // Backend đang lưu tên cột là location_name
+        published_date: initialData.published_date || '',
+        newest_published_date: initialData.newest_published_date || '',
+        hazard_logo: initialData.hazard_logo || []
+      });
+      // Xóa file đã chọn trước đó
+      setMsdsFile(null);
+      setCsdsFile(null);
+    } else if (isOpen && !initialData) {
+      // Reset form khi thêm mới
+      setFormData({
+        name: '', other_name: '', cas_number: '', workshop_id: workshops.length > 0 ? workshops[0].id : '', 
+        location_names: [], published_date: '', newest_published_date: '', hazard_logo: []
+      });
+      setMsdsFile(null);
+      setCsdsFile(null);
+    }
+  }, [isOpen, initialData, workshops]);
 
   const handleWorkshopChange = (e) => {
     setFormData(prev => ({ ...prev, workshop_id: e.target.value, location_names: [] }));
@@ -67,7 +100,10 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!msdsFile || !csdsFile) { alert("Vui lòng đính kèm đủ file!"); return; }
+    // Khi thêm mới thì bắt buộc có file, khi sửa thì không bắt buộc (giữ file cũ)
+    if (!isEditMode && (!msdsFile || !csdsFile)) { 
+        alert("Vui lòng đính kèm đủ file!"); return; 
+    }
     if (formData.location_names.length === 0) { alert("Vui lòng chọn ít nhất 1 phân khu!"); return; }
 
     setIsSubmitting(true);
@@ -82,15 +118,24 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
       
       submitData.append('hazard_logo_json', JSON.stringify(formData.hazard_logo));
       submitData.append('location_names_json', JSON.stringify(formData.location_names));
-      submitData.append('msds_file', msdsFile);
-      submitData.append('csds_file', csdsFile);
+      
+      // Chỉ append file nếu người dùng có chọn file mới
+      if (msdsFile) submitData.append('msds_file', msdsFile);
+      if (csdsFile) submitData.append('csds_file', csdsFile);
 
-      await axios.post('https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/add-chemical', submitData);
-      alert("Thêm hóa chất thành công!");
+      // Gọi API: Phân biệt POST (Thêm mới) và PUT (Cập nhật)
+      if (isEditMode) {
+        await axios.put(`https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/update-chemical/${initialData.id}`, submitData);
+        alert("Cập nhật hóa chất thành công!");
+      } else {
+        await axios.post('https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/add-chemical', submitData);
+        alert("Thêm hóa chất thành công!");
+      }
+      
       onSuccess(); 
       onClose();   
     } catch (error) {
-      alert("Server error!");
+      alert("Lỗi Server: " + (error.response?.data?.detail || error.message));
       console.error(error);
     } finally { setIsSubmitting(false); }
   };
@@ -103,14 +148,14 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
       <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-lg font-black text-slate-900 flex items-center gap-3">
-            <Box className="text-indigo-600" /> Thêm Hóa Chất Mới
+            {isEditMode ? <><Edit2 className="text-blue-600" /> Sửa thông tin Hóa chất</> : <><Box className="text-indigo-600" /> Thêm Hóa Chất Mới</>}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
             <X size={20} />
           </button>
         </div>
         <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-          <form id="add-chemical-form" onSubmit={handleSubmit} className="space-y-5">
+          <form id="chemical-form" onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên *</label><input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên khác</label><input type="text" value={formData.other_name} onChange={e => setFormData({...formData, other_name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
@@ -154,26 +199,33 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess }) => {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50">
-                <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setMsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                {/* Khi Edit Mode thì file KHÔNG required nữa */}
+                <input required={!isEditMode} type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setMsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 <Upload size={18} className={`mx-auto mb-1 ${msdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
-                <p className={`text-[11px] font-bold truncate ${msdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>{msdsFile ? msdsFile.name : "Tải lên MSDS"}</p>
+                <p className={`text-[11px] font-bold truncate ${msdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>
+                  {msdsFile ? msdsFile.name : (isEditMode ? "Tải lên MSDS mới (Tuỳ chọn)" : "Tải lên MSDS")}
+                </p>
               </div>
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50">
-                <input required type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setCsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                {/* Khi Edit Mode thì file KHÔNG required nữa */}
+                <input required={!isEditMode} type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setCsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 <Upload size={18} className={`mx-auto mb-1 ${csdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
-                <p className={`text-[11px] font-bold truncate ${csdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>{csdsFile ? csdsFile.name : "Tải lên CSDS"}</p>
+                <p className={`text-[11px] font-bold truncate ${csdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>
+                  {csdsFile ? csdsFile.name : (isEditMode ? "Tải lên CSDS mới (Tuỳ chọn)" : "Tải lên CSDS")}
+                </p>
               </div>
             </div>
           </form>
         </div>
         <div className="p-5 border-t border-slate-100 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="px-5 py-2 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100">HỦY</button>
-          <button form="add-chemical-form" type="submit" disabled={isSubmitting || isLoadingWorkshops} className="px-6 py-2 rounded-xl font-bold text-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50">
-            {isSubmitting ? 'ĐANG LƯU...' : 'LƯU HÓA CHẤT'}
+          <button form="chemical-form" type="submit" disabled={isSubmitting || isLoadingWorkshops} className={`px-6 py-2 rounded-xl font-bold text-sm text-white disabled:opacity-50 ${isEditMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}>
+            {isSubmitting ? 'ĐANG LƯU...' : (isEditMode ? 'CẬP NHẬT' : 'LƯU HÓA CHẤT')}
           </button>
         </div>
       </div>
     </div>
   );
 };
+
 export default AddChemicalModal;

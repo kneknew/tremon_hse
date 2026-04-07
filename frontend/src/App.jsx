@@ -54,8 +54,13 @@ const renderView = () => {
       case 'workshop':
         return <WorkshopView activeWorkshop={activeWorkshop} setActiveWorkshop={setActiveWorkshop} chemicals={realChemicals} />;
       case 'chemicals':
-        return <ChemicalsView chemicals={realChemicals} isLoading={isLoading} onAddClick={() => setIsAddModalOpen(true)} />;
-      case 'audit':
+return <ChemicalsView 
+                  chemicals={realChemicals} 
+                  isLoading={isLoading} 
+                  onAddClick={() => setIsAddModalOpen(true)} 
+                  onSuccess={fetchChemicals} 
+                />;
+                      case 'audit':
         return <AuditView />;
       case 'plans':
         return <PlansView />;

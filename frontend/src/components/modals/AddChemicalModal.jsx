@@ -144,8 +144,8 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 backdrop-blur-sm z-[9998] flex items-center justify-center p-4">
+      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-y-auto z-[9999] flex flex-col max-h-[90vh]">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-lg font-black text-slate-900 flex items-center gap-3">
             {isEditMode ? <><Edit2 className="text-blue-600" /> Sửa thông tin Hóa chất</> : <><Box className="text-indigo-600" /> Thêm Hóa Chất Mới</>}

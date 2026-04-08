@@ -1,30 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Plus, CheckCircle2, AlertTriangle, Clock, Box, Printer, Edit2, FileText } from 'lucide-react';
+import axios from 'axios';
+import { Search, Filter, Plus, CheckCircle2, AlertTriangle, Clock, Box, Printer, Edit2, FileText, Trash2 } from 'lucide-react';
 import AddChemicalModal from '../components/modals/AddChemicalModal';
 
 const ChemicalsView = ({ chemicals, isLoading, onAddClick, onSuccess }) => {
   const [editingChemical, setEditingChemical] = useState(null);
   const [printMenuId, setPrintMenuId] = useState(null);
 
-  // Đóng menu in khi click ra ngoài vùng nút
   useEffect(() => {
     const handleClickOutside = () => setPrintMenuId(null);
     window.addEventListener('click', handleClickOutside);
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // Sắp xếp hóa chất theo hạn MSDS
   const sortedChemicals = [...(chemicals || [])].sort((a, b) => 
     new Date(a.msds_expiry) - new Date(b.msds_expiry)
   );
 
-  // Hàm xử lý hiển thị ngày tháng an toàn
   const formatSafeDate = (dateStr) => {
     if (!dateStr || dateStr.startsWith('0001') || dateStr.startsWith('0004')) return 'Chưa cập nhật';
     return dateStr;
   };
 
-  // Hàm mở file PDF để in
   const handleOpenPrint = (path) => {
     if (!path) {
       alert("Hóa chất này chưa có tệp tài liệu PDF đính kèm!");
@@ -36,9 +33,21 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick, onSuccess }) => {
     window.open(publicUrl, '_blank');
   };
 
+  // CHỨC NĂNG MỚI: XỬ LÝ XÓA
+  const handleDelete = async (chemical) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa hóa chất: ${chemical.name}?`)) {
+      try {
+        await axios.delete(`https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/delete-chemical/${chemical.id}`);
+        alert("Xóa hóa chất thành công!");
+        if (onSuccess) onSuccess();
+      } catch (error) {
+        alert("Lỗi khi xóa hóa chất: " + (error.response?.data?.detail || error.message));
+      }
+    }
+  };
+
   return (
     <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500 w-full relative">
-      {/* HEADER */}
       <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm gap-4">
         <div>
           <h2 className="text-xl font-black text-slate-900 whitespace-nowrap">Quản lý Kho Hóa chất</h2>
@@ -50,7 +59,7 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick, onSuccess }) => {
             <input type="text" placeholder="Tìm tên hóa chất..." className="bg-transparent border-none outline-none p-2 text-sm font-semibold w-full" />
           </div>
           <button className="bg-white border border-slate-200 px-3 py-2 rounded-xl hover:bg-slate-50">
-            <Filter size={16} className="text-slate-600" />
+           <Filter size={16} className="text-slate-600" />
           </button>
           <button onClick={onAddClick} className="flex items-center gap-1.5 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md hover:bg-indigo-700 transition-all active:scale-95">
             <Plus size={16} /> THÊM MỚI
@@ -58,7 +67,6 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick, onSuccess }) => {
         </div>
       </div>
       
-      {/* BẢNG DỮ LIỆU */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-visible">
         <div className="overflow-x-auto custom-scrollbar overflow-visible">
           <table className="w-full text-left border-collapse min-w-max">
@@ -76,15 +84,17 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick, onSuccess }) => {
                 const today = new Date();
                 const diffDays = Math.ceil((new Date(chem.msds_expiry) - today) / (1000 * 60 * 60 * 24));
                 
-                let StatusIcon = CheckCircle2; 
+                let StatusIcon = CheckCircle2;
                 let statusText = "Còn hạn"; 
                 let statusStyle = "bg-emerald-50 text-emerald-700 border-emerald-100"; 
                 let dateTextStyle = "text-emerald-700";
 
                 if (diffDays < 0) { 
-                  StatusIcon = AlertTriangle; statusText = "Hết hạn"; statusStyle = "bg-red-50 text-red-700 border-red-100"; dateTextStyle = "text-red-700";
+                  StatusIcon = AlertTriangle;
+                  statusText = "Hết hạn"; statusStyle = "bg-red-50 text-red-700 border-red-100"; dateTextStyle = "text-red-700";
                 } else if (diffDays <= 30) { 
-                  StatusIcon = Clock; statusText = "Sắp hết hạn"; statusStyle = "bg-amber-50 text-amber-700 border-amber-100"; dateTextStyle = "text-amber-700";
+                  StatusIcon = Clock;
+                  statusText = "Sắp hết hạn"; statusStyle = "bg-amber-50 text-amber-700 border-amber-100"; dateTextStyle = "text-amber-700";
                 }
                 
                 const locations = Array.isArray(chem.location_name) ? chem.location_name : [];
@@ -112,45 +122,29 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick, onSuccess }) => {
                     </td>
                     
                     <td className="px-5 py-4">
-  {/* Chuyển group/tooltip thành group và sử dụng inline-flex để ôm sát nội dung */}
-  <div className="relative group inline-flex items-center">
-    
-    {/* Phần trigger (Xưởng) */}
-    <span className="cursor-help px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-[11px] font-black uppercase shadow-sm flex items-center gap-1.5 hover:bg-indigo-100 transition-colors">
-      {chem.workshops?.name || 'N/A'}
-      {locations.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>}
-    </span>
-
-    {/* Tooltip: Đã đổi sang group-hover và min-w-[150px] */}
-<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-white text-slate-900 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100] border border-slate-100 w-max max-w-[250px] flex flex-col items-center justify-center">
-  
-  {/* Mũi tên - Giữ nguyên định vị để luôn trỏ vào giữa nút */}
-  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
-  
-  {/* Container nội dung: flex-col và items-center để căn giữa mọi thứ */}
-  <div className="flex flex-col items-center gap-2">
-    
-    {/* Danh sách các nhãn: justify-center để khi có 1 nhãn hoặc N/A thì nó nằm giữa */}
-    <div className="flex flex-wrap gap-1.5 justify-center items-center">
-      {locations.length > 0 ? (
-        locations.map((loc, idx) => (
-          <span key={idx} className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[11px] font-bold whitespace-nowrap">
-            {loc}
-          </span>
-        ))
-      ) : (
-        /* w-full và text-center đảm bảo chữ N/A đứng một mình sẽ nằm đúng tâm */
-        <span className="text-[10px] text-slate-400 italic font-medium w-full text-center">
-          N/A
-        </span>
-      )}
-    </div>
-    
-  </div>
-</div>
-
-  </div>
-</td>
+                      <div className="relative group inline-flex items-center">
+                        <span className="cursor-help px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-[11px] font-black uppercase shadow-sm flex items-center gap-1.5 hover:bg-indigo-100 transition-colors">
+                          {chem.workshops?.name || 'N/A'}
+                          {locations.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span>}
+                        </span>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-white text-slate-900 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[100] border border-slate-100 w-max max-w-[250px] flex flex-col items-center justify-center">
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-wrap gap-1.5 justify-center items-center">
+                              {locations.length > 0 ? (
+                                locations.map((loc, idx) => (
+                                  <span key={idx} className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[11px] font-bold whitespace-nowrap">
+                                    {loc}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-[10px] text-slate-400 italic font-medium w-full text-center">N/A</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
                     
                     <td className="px-5 py-4">
                       <div className="relative group inline-flex items-center">
@@ -181,12 +175,9 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick, onSuccess }) => {
                             <Printer size={14} /> IN
                           </button>
 
-                          {/* MENU IN - ĐÃ CHUYỂN SANG BÊN TRÁI */}
                           {printMenuId === chem.id && (
                             <div className="absolute right-full top-1/2 -translate-y-1/2 mr-3 bg-white rounded-xl shadow-2xl border border-slate-100 p-1.5 z-[110] min-w-[130px] animate-in slide-in-from-right-1 duration-200">
-                              {/* Mũi tên chỉ sang phải vào nút IN */}
                               <div className="absolute left-full top-1/2 -translate-y-1/2 border-4 border-transparent border-l-white"></div>
-                              
                               <button onClick={() => handleOpenPrint(chem.msds_path)} className="w-full flex items-center gap-2 px-3 py-2 text-[10px] font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors border-b border-slate-50">
                                 <FileText size={14} className="text-indigo-500" /> IN MSDS
                               </button>
@@ -196,6 +187,15 @@ const ChemicalsView = ({ chemicals, isLoading, onAddClick, onSuccess }) => {
                             </div>
                           )}
                         </div>
+
+                        {/* NÚT XÓA NẰM CẠNH NÚT IN */}
+                        <button 
+                          onClick={() => handleDelete(chem)}
+                          className="p-2 bg-red-50 text-red-600 border border-red-100 rounded-xl hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-sm"
+                          title="Xóa hóa chất"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>

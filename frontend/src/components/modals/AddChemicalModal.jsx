@@ -2,22 +2,17 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, X, Upload, Edit2 } from 'lucide-react';
 
-// Bổ sung props `initialData`
 const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [msdsFile, setMsdsFile] = useState(null);
   const [csdsFile, setCsdsFile] = useState(null);
   const [workshops, setWorkshops] = useState([]);
   const [isLoadingWorkshops, setIsLoadingWorkshops] = useState(true);
-
-  // Biến kiểm tra xem đây là form Sửa hay Thêm mới
   const isEditMode = !!initialData;
-
   const [formData, setFormData] = useState({
     name: '', other_name: '', cas_number: '', workshop_id: '', 
     location_names: [], published_date: '', newest_published_date: '', hazard_logo: []
   });
-
   const GHS_LOGOS = [
     { id: 'flammable', label: 'Dễ cháy' }, { id: 'toxic', label: 'Độc hại' },
     { id: 'corrosive', label: 'Ăn mòn' }, { id: 'explosive', label: 'Nổ' },
@@ -25,7 +20,6 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
     { id: 'environmental', label: 'Nguy hại MT' }
   ];
 
-  // Fetch danh sách xưởng
   useEffect(() => {
     if (isOpen) {
       const fetchWorkshops = async () => {
@@ -35,7 +29,6 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
           const data = res.data.data || [];
           setWorkshops(data);
           
-          // NẾU THÊM MỚI: Chọn xưởng đầu tiên làm mặc định
           if (!isEditMode && data.length > 0) {
             setFormData(prev => ({ ...prev, workshop_id: data[0].id }));
           }
@@ -49,7 +42,6 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
     }
   }, [isOpen, isEditMode]);
 
-  // LOGIC ĐIỀN DỮ LIỆU CŨ VÀO FORM KHI BẤM "SỬA"
   useEffect(() => {
     if (isOpen && initialData) {
       setFormData({
@@ -57,18 +49,17 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
         other_name: initialData.other_name || '',
         cas_number: initialData.cas_number || '',
         workshop_id: initialData.workshop_id || '',
-        location_names: initialData.location_name || [], // Backend đang lưu tên cột là location_name
+        location_names: initialData.location_name || [],
         published_date: initialData.published_date || '',
         newest_published_date: initialData.newest_published_date || '',
         hazard_logo: initialData.hazard_logo || []
       });
-      // Xóa file đã chọn trước đó
       setMsdsFile(null);
       setCsdsFile(null);
     } else if (isOpen && !initialData) {
-      // Reset form khi thêm mới
       setFormData({
-        name: '', other_name: '', cas_number: '', workshop_id: workshops.length > 0 ? workshops[0].id : '', 
+        name: '', other_name: '', cas_number: '', workshop_id: workshops.length > 0 ? 
+        workshops[0].id : '', 
         location_names: [], published_date: '', newest_published_date: '', hazard_logo: []
       });
       setMsdsFile(null);
@@ -100,9 +91,9 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Khi thêm mới thì bắt buộc có file, khi sửa thì không bắt buộc (giữ file cũ)
     if (!isEditMode && (!msdsFile || !csdsFile)) { 
-        alert("Vui lòng đính kèm đủ file!"); return; 
+        alert("Vui lòng đính kèm đủ file!");
+        return; 
     }
     if (formData.location_names.length === 0) { alert("Vui lòng chọn ít nhất 1 phân khu!"); return; }
 
@@ -112,18 +103,15 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
       submitData.append('name', formData.name);
       submitData.append('cas_number', formData.cas_number);
       submitData.append('workshop_id', formData.workshop_id);
-      submitData.append('published_date', formData.published_date);
+      if (formData.published_date) submitData.append('published_date', formData.published_date);
       submitData.append('newest_published_date', formData.newest_published_date);
       if (formData.other_name) submitData.append('other_name', formData.other_name);
       
       submitData.append('hazard_logo_json', JSON.stringify(formData.hazard_logo));
       submitData.append('location_names_json', JSON.stringify(formData.location_names));
-      
-      // Chỉ append file nếu người dùng có chọn file mới
       if (msdsFile) submitData.append('msds_file', msdsFile);
       if (csdsFile) submitData.append('csds_file', csdsFile);
 
-      // Gọi API: Phân biệt POST (Thêm mới) và PUT (Cập nhật)
       if (isEditMode) {
         await axios.put(`https://musical-memory-94xwjp76j573xq4g-8000.app.github.dev/update-chemical/${initialData.id}`, submitData);
         alert("Cập nhật hóa chất thành công!");
@@ -133,7 +121,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
       }
       
       onSuccess(); 
-      onClose();   
+      onClose();
     } catch (error) {
       alert("Lỗi Server: " + (error.response?.data?.detail || error.message));
       console.error(error);
@@ -144,8 +132,8 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 backdrop-blur-sm z-[9998] flex items-center justify-center p-4">
-      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-y-auto z-[9999] flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-y-auto flex flex-col max-h-[90vh]">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-lg font-black text-slate-900 flex items-center gap-3">
             {isEditMode ? <><Edit2 className="text-blue-600" /> Sửa thông tin Hóa chất</> : <><Box className="text-indigo-600" /> Thêm Hóa Chất Mới</>}
@@ -157,7 +145,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
         <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
           <form id="chemical-form" onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên *</label><input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
+               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên *</label><input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên khác</label><input type="text" value={formData.other_name} onChange={e => setFormData({...formData, other_name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">CAS *</label><input required type="text" value={formData.cas_number} onChange={e => setFormData({...formData, cas_number: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
             </div>
@@ -182,7 +170,8 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ngày bản đang treo *</label><input required type="date" value={formData.published_date} onChange={e => setFormData({...formData, published_date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" /></div>
+              {/* Loại bỏ dấu * và thuộc tính required  */}
+              <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ngày bản đang treo</label><input type="date" value={formData.published_date} onChange={e => setFormData({...formData, published_date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" /></div>
               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ngày bản NSX *</label><input required type="date" value={formData.newest_published_date} onChange={e => setFormData({...formData, newest_published_date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" /></div>
             </div>
 
@@ -199,7 +188,6 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50">
-                {/* Khi Edit Mode thì file KHÔNG required nữa */}
                 <input required={!isEditMode} type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setMsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 <Upload size={18} className={`mx-auto mb-1 ${msdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
                 <p className={`text-[11px] font-bold truncate ${msdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>
@@ -207,7 +195,6 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
                 </p>
               </div>
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50">
-                {/* Khi Edit Mode thì file KHÔNG required nữa */}
                 <input required={!isEditMode} type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setCsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 <Upload size={18} className={`mx-auto mb-1 ${csdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
                 <p className={`text-[11px] font-bold truncate ${csdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>

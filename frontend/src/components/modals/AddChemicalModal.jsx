@@ -13,6 +13,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
     name: '', other_name: '', cas_number: '', workshop_id: '', 
     location_names: [], published_date: '', newest_published_date: '', hazard_logo: []
   });
+
   const GHS_LOGOS = [
     { id: 'flammable', label: 'Dễ cháy' }, { id: 'toxic', label: 'Độc hại' },
     { id: 'corrosive', label: 'Ăn mòn' }, { id: 'explosive', label: 'Nổ' },
@@ -91,8 +92,9 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isEditMode && (!msdsFile || !csdsFile)) { 
-        alert("Vui lòng đính kèm đủ file!");
+    // THAY ĐỔI: Chỉ kiểm tra msdsFile, csdsFile là tùy chọn
+    if (!isEditMode && !msdsFile) { 
+        alert("Vui lòng đính kèm file MSDS!");
         return; 
     }
     if (formData.location_names.length === 0) { alert("Vui lòng chọn ít nhất 1 phân khu!"); return; }
@@ -109,6 +111,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
       
       submitData.append('hazard_logo_json', JSON.stringify(formData.hazard_logo));
       submitData.append('location_names_json', JSON.stringify(formData.location_names));
+      
       if (msdsFile) submitData.append('msds_file', msdsFile);
       if (csdsFile) submitData.append('csds_file', csdsFile);
 
@@ -145,7 +148,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
         <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
           <form id="chemical-form" onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên *</label><input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
+              <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên *</label><input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Tên khác</label><input type="text" value={formData.other_name} onChange={e => setFormData({...formData, other_name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">CAS *</label><input required type="text" value={formData.cas_number} onChange={e => setFormData({...formData, cas_number: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500" /></div>
             </div>
@@ -160,7 +163,7 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
               <div>
                 <label className="block text-[11px] font-bold text-indigo-700 uppercase mb-2">Phân khu *</label>
                 <div className="flex flex-wrap gap-2">
-                  {currentWorkshop?.locations?.length > 0 ? currentWorkshop.locations.map(loc => (
+                    {currentWorkshop?.locations?.length > 0 ? currentWorkshop.locations.map(loc => (
                     <label key={loc} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer border text-xs font-bold ${formData.location_names.includes(loc) ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600'}`}>
                       <input type="checkbox" className="hidden" checked={formData.location_names.includes(loc)} onChange={() => handleLocationToggle(loc)} /> {loc}
                     </label>
@@ -170,7 +173,6 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Loại bỏ dấu * và thuộc tính required  */}
               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ngày bản đang treo</label><input type="date" value={formData.published_date} onChange={e => setFormData({...formData, published_date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" /></div>
               <div><label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Ngày bản NSX *</label><input required type="date" value={formData.newest_published_date} onChange={e => setFormData({...formData, newest_published_date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none" /></div>
             </div>
@@ -191,14 +193,16 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
                 <input required={!isEditMode} type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setMsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 <Upload size={18} className={`mx-auto mb-1 ${msdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
                 <p className={`text-[11px] font-bold truncate ${msdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>
-                  {msdsFile ? msdsFile.name : (isEditMode ? "Tải lên MSDS mới (Tuỳ chọn)" : "Tải lên MSDS")}
+                  {msdsFile ? msdsFile.name : (isEditMode ? "Tải lên MSDS mới (Tuỳ chọn)" : "Tải lên MSDS *")}
                 </p>
               </div>
+              
+              {/* THAY ĐỔI: Input CSDS không còn thuộc tính required */}
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center relative hover:bg-slate-50">
-                <input required={!isEditMode} type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setCsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <input type="file" accept=".pdf" onChange={e => {if(e.target.files.length > 0) setCsdsFile(e.target.files[0])}} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                 <Upload size={18} className={`mx-auto mb-1 ${csdsFile ? 'text-indigo-500' : 'text-slate-400'}`} />
                 <p className={`text-[11px] font-bold truncate ${csdsFile ? 'text-indigo-600' : 'text-slate-600'}`}>
-                  {csdsFile ? csdsFile.name : (isEditMode ? "Tải lên CSDS mới (Tuỳ chọn)" : "Tải lên CSDS")}
+                  {csdsFile ? csdsFile.name : "Tải lên CSDS (Tùy chọn)"}
                 </p>
               </div>
             </div>

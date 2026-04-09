@@ -134,9 +134,11 @@ const AddChemicalModal = ({ isOpen, onClose, onSuccess, initialData = null }) =>
   const currentWorkshop = workshops.find(ws => ws.id === formData.workshop_id);
   if (!isOpen) return null;
 
+  if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-y-auto flex flex-col max-h-[90vh]">
+    // FIX: Tăng z-index lên cực cao để đè lên bảng 
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[9999] flex items-center justify-center p-4">
+      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[95vh]">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <h2 className="text-lg font-black text-slate-900 flex items-center gap-3">
             {isEditMode ? <><Edit2 className="text-blue-600" /> Sửa thông tin Hóa chất</> : <><Box className="text-indigo-600" /> Thêm Hóa Chất Mới</>}
